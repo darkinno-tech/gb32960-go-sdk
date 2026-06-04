@@ -378,16 +378,22 @@ func (c *Connection) handlePacket(pkt *Packet) {
 	case constant.CmdPlatLogin:
 		ph := c.server.platformHandler
 		if ph == nil {
-			c.logger.Debug("platform login response ignored, no PlatformHandler")
+			c.logger.Debug("platform login ignored, no PlatformHandler")
 			return
 		}
 		msg, err := DecodePlatLoginResponse(pkt.Data)
 		if err != nil {
-			c.logger.Error("platform login response decode error", "error", err)
+			c.logger.Error("platform login decode error", "error", err)
 			return
 		}
-		if err := ph.OnPlatLoginResponse(ctx, c, msg); err != nil {
-			c.logger.Error("platform login handler error", "error", err)
+		if pkt.Response == constant.ReqRequest {
+			if err := ph.OnPlatformLoginRequest(ctx, c, msg); err != nil {
+				c.logger.Error("platform login request handler error", "error", err)
+			}
+		} else {
+			if err := ph.OnPlatLoginResponse(ctx, c, msg); err != nil {
+				c.logger.Error("platform login response handler error", "error", err)
+			}
 		}
 
 	case constant.CmdPlatLogout:

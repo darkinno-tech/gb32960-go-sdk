@@ -138,6 +138,43 @@ type Handler interface {
 }
 ```
 
+## PlatformHandler 接口
+
+处理平台登入/登出请求和响应：
+
+```go
+type PlatformHandler interface {
+	OnPlatformLoginRequest(ctx context.Context, conn *Connection, msg *PlatformLoginData) error
+	OnPlatLoginResponse(ctx context.Context, conn *Connection, msg *PlatformLoginData) error
+	OnPlatLogoutResponse(ctx context.Context, conn *Connection, msg *PlatformLogoutData) error
+}
+```
+
+**使用示例：**
+
+```go
+type MyPlatformHandler struct{}
+
+func (h *MyPlatformHandler) OnPlatformLoginRequest(ctx context.Context, conn *gb32960.Connection, msg *gb32960.PlatformLoginData) error {
+	log.Printf("车辆终端平台登入请求: VIN=%s Username=%s", conn.VIN(), msg.Username)
+	return nil
+}
+
+func (h *MyPlatformHandler) OnPlatLoginResponse(ctx context.Context, conn *gb32960.Connection, msg *gb32960.PlatformLoginData) error {
+	log.Printf("平台登入响应: VIN=%s", conn.VIN())
+	return nil
+}
+
+func (h *MyPlatformHandler) OnPlatLogoutResponse(ctx context.Context, conn *gb32960.Connection, msg *gb32960.PlatformLogoutData) error {
+	log.Printf("平台登出响应: VIN=%s", conn.VIN())
+	return nil
+}
+
+server := gb32960.NewServer(
+	gb32960.WithPlatformHandler(&MyPlatformHandler{}),
+)
+```
+
 ## 认证
 
 **VIN 白名单：**
@@ -192,6 +229,8 @@ type Forwarder interface {
 | 0x02 | 实时信息上报 | T-BOX → 平台 | OK |
 | 0x03 | 补发信息上报 | T-BOX → 平台 | OK |
 | 0x04 | 车辆登出 | T-BOX → 平台 | OK |
+| 0x05 | 平台登入 | 双向 | OK |
+| 0x06 | 平台登出 | 双向 | OK |
 | 0x07 | 心跳 | T-BOX → 平台 | OK |
 | 0x08 | 终端校时 | T-BOX → 平台 | OK |
 | 0xFE | 平台应答 | 平台 → T-BOX | 自动 |
@@ -216,7 +255,7 @@ type Forwarder interface {
 |---|---|---|
 | 帧结构 | `##` + 命令(1) + 应答(1) + VIN(17) + 加密(1) + 长度(2) + 数据(N) + BCC(1) | OK |
 | 起始标识 | `0x23 0x23` | OK |
-| 命令单元 | 0x01-0x08 (6 种) | OK |
+| 命令单元 | 0x01-0x08 (8 种) | OK |
 | 应答标志 | 命令=0x01, 应答=0xFE | OK |
 | 加密方式 | 0x01/0x02/0x03/0xFE | OK |
 | VIN 码 | 17 字节 ASCII | OK |

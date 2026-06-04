@@ -18,6 +18,7 @@ const (
 	CmdParamSetting   = 0x82
 
 	RespSuccess = 0xFE
+	ReqRequest  = 0x01
 
 	EncNone   = 0x01
 	EncRSA    = 0x02

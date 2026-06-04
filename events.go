@@ -22,6 +22,7 @@ type TimeProvider interface {
 }
 
 type PlatformHandler interface {
+	OnPlatformLoginRequest(ctx context.Context, conn *Connection, msg *PlatformLoginData) error
 	OnPlatLoginResponse(ctx context.Context, conn *Connection, msg *PlatformLoginData) error
 	OnPlatLogoutResponse(ctx context.Context, conn *Connection, msg *PlatformLogoutData) error
 }

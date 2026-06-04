@@ -136,6 +136,43 @@ type Handler interface {
 }
 ```
 
+## PlatformHandler Interface
+
+Handles platform login/logout requests and responses:
+
+```go
+type PlatformHandler interface {
+	OnPlatformLoginRequest(ctx context.Context, conn *Connection, msg *PlatformLoginData) error
+	OnPlatLoginResponse(ctx context.Context, conn *Connection, msg *PlatformLoginData) error
+	OnPlatLogoutResponse(ctx context.Context, conn *Connection, msg *PlatformLogoutData) error
+}
+```
+
+**Usage example:**
+
+```go
+type MyPlatformHandler struct{}
+
+func (h *MyPlatformHandler) OnPlatformLoginRequest(ctx context.Context, conn *gb32960.Connection, msg *gb32960.PlatformLoginData) error {
+	log.Printf("Vehicle platform login request: VIN=%s Username=%s", conn.VIN(), msg.Username)
+	return nil
+}
+
+func (h *MyPlatformHandler) OnPlatLoginResponse(ctx context.Context, conn *gb32960.Connection, msg *gb32960.PlatformLoginData) error {
+	log.Printf("Platform login response: VIN=%s", conn.VIN())
+	return nil
+}
+
+func (h *MyPlatformHandler) OnPlatLogoutResponse(ctx context.Context, conn *gb32960.Connection, msg *gb32960.PlatformLogoutData) error {
+	log.Printf("Platform logout response: VIN=%s", conn.VIN())
+	return nil
+}
+
+server := gb32960.NewServer(
+	gb32960.WithPlatformHandler(&MyPlatformHandler{}),
+)
+```
+
 ## Authentication
 
 **VIN whitelist:**
@@ -190,6 +227,8 @@ type Forwarder interface {
 | 0x02 | Realtime data | T-BOX → Platform | OK |
 | 0x03 | Reissue data | T-BOX → Platform | OK |
 | 0x04 | Vehicle logout | T-BOX → Platform | OK |
+| 0x05 | Platform login | Bidirectional | OK |
+| 0x06 | Platform logout | Bidirectional | OK |
 | 0x07 | Heartbeat | T-BOX → Platform | OK |
 | 0x08 | Time calibration | T-BOX → Platform | OK |
 | 0xFE | Platform response | Platform → T-BOX | Auto |
@@ -214,7 +253,7 @@ type Forwarder interface {
 |---|---|---|
 | Frame structure | `##` + CMD(1) + RESP(1) + VIN(17) + ENC(1) + LEN(2) + DATA(N) + BCC(1) | OK |
 | Start marker | `0x23 0x23` | OK |
-| Command codes | 0x01-0x08 (6 commands) | OK |
+| Command codes | 0x01-0x08 (8 commands) | OK |
 | Response flag | request=0x01, response=0xFE | OK |
 | Encryption | 0x01/0x02/0x03/0xFE | OK |
 | VIN | 17 bytes ASCII | OK |
