@@ -48,7 +48,7 @@ func newConnection(id string, netConn net.Conn, server *Server) *Connection {
 		id:        id,
 		conn:      netConn,
 		createdAt: time.Now(),
-		decoder:   NewDecoder(),
+		decoder:   newDecoderWithConfig(server.timeCodec, server.bccIncludeStart),
 		server:    server,
 		logger:    server.logger.With("conn_id", id, "remote", netConn.RemoteAddr().String()),
 		ctx:       ctx,
@@ -290,6 +290,9 @@ func (c *Connection) handlePacket(pkt *Packet) {
 				return
 			}
 			if resp != nil {
+				if resp.LoginTime.IsZero() {
+					resp.LoginTime = loginData.LoginTime
+				}
 				if err := c.sendLoginResponse(resp); err != nil {
 					c.logger.Error("login response send error", "error", err)
 				}
@@ -357,7 +360,7 @@ func (c *Connection) handlePacket(pkt *Packet) {
 			}
 		}
 
-		c.Send(constant.CmdHeartbeat, nil)
+		c.Send(constant.CmdHeartbeat, encodeBCDTime(time.Now().UTC()))
 
 	case constant.CmdTimeCalibr:
 		var tp time.Time

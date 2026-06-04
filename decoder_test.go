@@ -9,8 +9,11 @@ import (
 )
 
 func makeMinimalPacket(command byte, vin string, data []byte) []byte {
-	vinBytes := make([]byte, constant.VINLength)
-	copy(vinBytes, []byte(vin))
+	vinPadded := make([]byte, constant.VINLength)
+	for i := range vinPadded {
+		vinPadded[i] = 0x20
+	}
+	copy(vinPadded, []byte(vin))
 
 	totalLen := constant.HeaderSize + len(data) + 1
 	pkt := make([]byte, totalLen)
@@ -24,7 +27,7 @@ func makeMinimalPacket(command byte, vin string, data []byte) []byte {
 	pos++
 	pkt[pos] = 0x01
 	pos++
-	copy(pkt[pos:pos+constant.VINLength], vinBytes)
+	copy(pkt[pos:pos+constant.VINLength], vinPadded)
 	pos += constant.VINLength
 	pkt[pos] = constant.EncNone
 	pos++
@@ -198,7 +201,7 @@ func TestEncodeResponse(t *testing.T) {
 
 func TestDecodeLoginData(t *testing.T) {
 	data := []byte{
-		0x16, 0x01, 0x01, 0x0C, 0x00, 0x00,
+		0x22, 0x01, 0x01, 0x12, 0x00, 0x00,
 		0x00, 0x01,
 		0x0A,
 		'1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -212,7 +215,7 @@ func TestDecodeLoginData(t *testing.T) {
 		t.Fatal(err)
 	}
 	if loginData.LoginTime.Year() != 2022 {
-		t.Error("bad year")
+		t.Errorf("bad year: %d", loginData.LoginTime.Year())
 	}
 	if loginData.LoginTime.Month() != time.January {
 		t.Error("bad month")
@@ -221,7 +224,7 @@ func TestDecodeLoginData(t *testing.T) {
 		t.Error("bad day")
 	}
 	if loginData.LoginTime.Hour() != 12 {
-		t.Error("bad hour")
+		t.Errorf("bad hour: %d", loginData.LoginTime.Hour())
 	}
 	if loginData.Sequence != 1 {
 		t.Error("bad sequence")
@@ -239,7 +242,7 @@ func TestDecodeLoginData(t *testing.T) {
 
 func TestDecodeLogoutData(t *testing.T) {
 	data := []byte{
-		0x16, 0x06, 0x0F, 0x12, 0x30, 0x00,
+		0x22, 0x06, 0x15, 0x18, 0x48, 0x00,
 		0x00, 0x05,
 	}
 
@@ -248,10 +251,19 @@ func TestDecodeLogoutData(t *testing.T) {
 		t.Fatal(err)
 	}
 	if logoutData.LogoutTime.Year() != 2022 {
-		t.Error("bad year")
+		t.Errorf("bad year: %d", logoutData.LogoutTime.Year())
 	}
 	if logoutData.LogoutTime.Month() != time.June {
 		t.Error("bad month")
+	}
+	if logoutData.LogoutTime.Day() != 15 {
+		t.Errorf("bad day: %d", logoutData.LogoutTime.Day())
+	}
+	if logoutData.LogoutTime.Hour() != 18 {
+		t.Errorf("bad hour: %d", logoutData.LogoutTime.Hour())
+	}
+	if logoutData.LogoutTime.Minute() != 48 {
+		t.Errorf("bad minute: %d", logoutData.LogoutTime.Minute())
 	}
 	if logoutData.Sequence != 5 {
 		t.Error("bad sequence")
@@ -270,5 +282,135 @@ func TestVerifyVIN(t *testing.T) {
 	}
 	if VerifyVIN("TESTVIN123456789@") {
 		t.Error("invalid char VIN accepted")
+	}
+}
+
+func TestBCDRoundtrip(t *testing.T) {
+	tests := []struct {
+		name string
+		t    time.Time
+	}{
+		{"2026-01-01 00:00:00", time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)},
+		{"2022-06-15 18:48:00", time.Date(2022, 6, 15, 18, 48, 0, 0, time.UTC)},
+		{"2025-12-31 23:59:59", time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC)},
+		{"2000-01-01 00:00:00", time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			encoded := encodeBCDTime(tt.t)
+			if len(encoded) != 6 {
+				t.Fatalf("encoded length: %d", len(encoded))
+			}
+			decoded := parseBCDTime6(encoded)
+			if !decoded.Equal(tt.t) {
+				t.Errorf("roundtrip failed: %v != %v", decoded, tt.t)
+			}
+		})
+	}
+}
+
+func TestBCDTimeValues(t *testing.T) {
+	// 2026-06-15 18:48:30
+	ts := time.Date(2026, 6, 15, 18, 48, 30, 0, time.UTC)
+	b := encodeBCDTime(ts)
+
+	expected := []byte{0x26, 0x06, 0x15, 0x18, 0x48, 0x30}
+	for i, v := range expected {
+		if b[i] != v {
+			t.Errorf("byte[%d]: want 0x%02X got 0x%02X", i, v, b[i])
+		}
+	}
+}
+
+func TestDecodeLoginDataBinaryMode(t *testing.T) {
+	// 旧的二进制编码数据: year=22(0x16), month=1(0x01), day=1(0x01), hour=12(0x0C)
+	data := []byte{
+		0x16, 0x01, 0x01, 0x0C, 0x00, 0x00,
+		0x00, 0x01,
+		0x0A,
+		'1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+	}
+
+	d := newDecoderWithConfig(TimeCodecBinary, false)
+	loginData, err := d.DecodeLoginData(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loginData.LoginTime.Year() != 2022 {
+		t.Errorf("bad year: %d", loginData.LoginTime.Year())
+	}
+	if loginData.LoginTime.Hour() != 12 {
+		t.Errorf("bad hour: %d", loginData.LoginTime.Hour())
+	}
+}
+
+func TestBCCIncludeStart(t *testing.T) {
+	vin := "TESTVIN1234567890"
+	data := []byte{0x01, 0x02}
+
+	// 构造帧，BCC 从 header[0] 开始算（含起始符）
+	vinPadded := make([]byte, constant.VINLength)
+	for i := range vinPadded {
+		vinPadded[i] = 0x20
+	}
+	copy(vinPadded, []byte(vin))
+
+	totalLen := constant.HeaderSize + len(data) + 1
+	pkt := make([]byte, totalLen)
+	pkt[0] = constant.StartMarker1
+	pkt[1] = constant.StartMarker2
+	pkt[2] = constant.CmdHeartbeat
+	pkt[3] = 0x01
+	copy(pkt[4:21], vinPadded)
+	pkt[21] = constant.EncNone
+	binary.BigEndian.PutUint16(pkt[22:24], uint16(len(data)))
+	copy(pkt[24:], data)
+
+	// BCC 从 position 0 算（含起始符）
+	var bccFromStart byte
+	for i := 0; i < len(pkt)-1; i++ {
+		bccFromStart ^= pkt[i]
+	}
+	pkt[len(pkt)-1] = bccFromStart
+
+	// 注：0x23 ^ 0x23 = 0x00，所以含起始符的 BCC 与标准 BCC 相同。
+	// 两种模式都应接受此帧。
+	d1 := newDecoderWithConfig(TimeCodecBCD, false)
+	d1.Feed(pkt)
+	pkt1, err := d1.Decode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pkt1 == nil {
+		t.Fatal("standard mode should accept packet (BCC is same)")
+	}
+
+	d2 := newDecoderWithConfig(TimeCodecBCD, true)
+	d2.Feed(pkt)
+	pkt2, err := d2.Decode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pkt2 == nil {
+		t.Fatal("bccIncludeStart mode should accept packet")
+	}
+	if pkt2.Command != constant.CmdHeartbeat {
+		t.Errorf("command: want %x got %x", constant.CmdHeartbeat, pkt2.Command)
+	}
+}
+
+func TestEncodeResponseVINPadding(t *testing.T) {
+	vin := "TESTVIN1234567890"
+	pkt, err := EncodeResponse(constant.CmdLogin, vin, constant.EncNone, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// VIN 区域应全部为 VIN 字符或空格
+	vinArea := pkt[4:21]
+	for i, b := range vinArea {
+		if b == 0x00 {
+			t.Errorf("VIN byte[%d] is 0x00 (should be 0x20 for padding)", i)
+		}
 	}
 }

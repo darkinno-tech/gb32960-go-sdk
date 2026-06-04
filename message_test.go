@@ -10,7 +10,7 @@ import (
 
 func TestDecodeRealtimeVehicleOnly(t *testing.T) {
 	data := make([]byte, 0)
-	data = append(data, 0x16, 0x01, 0x01, 0x0C, 0x00, 0x00)
+	data = append(data, 0x22, 0x01, 0x01, 0x12, 0x00, 0x00)
 
 	data = append(data, codec.FieldVehicle)
 	vehicleBytes := make([]byte, 20)
@@ -44,7 +44,7 @@ func TestDecodeRealtimeVehicleOnly(t *testing.T) {
 
 func TestDecodeRealtimeWithPosition(t *testing.T) {
 	data := make([]byte, 0)
-	data = append(data, 0x16, 0x01, 0x01, 0x0C, 0x00, 0x00)
+	data = append(data, 0x22, 0x01, 0x01, 0x12, 0x00, 0x00)
 
 	data = append(data, codec.FieldPosition)
 	posBytes := make([]byte, 8)
@@ -69,7 +69,7 @@ func TestDecodeRealtimeWithPosition(t *testing.T) {
 
 func TestDecodeRealtimeMotors(t *testing.T) {
 	data := make([]byte, 0)
-	data = append(data, 0x16, 0x01, 0x01, 0x0C, 0x00, 0x00)
+	data = append(data, 0x22, 0x01, 0x01, 0x12, 0x00, 0x00)
 
 	data = append(data, codec.FieldMotor)
 	data = append(data, byte(1))
@@ -94,7 +94,7 @@ func TestDecodeRealtimeMotors(t *testing.T) {
 
 func TestEncodeLoginResponse(t *testing.T) {
 	resp := &LoginResponse{
-		LoginTime: parseTime6([]byte{0x16, 0x01, 0x01, 0x0C, 0x00, 0x00}),
+		LoginTime: parseBCDTime6([]byte{0x22, 0x01, 0x01, 0x12, 0x00, 0x00}),
 		Sequence:  1,
 		Result:    constant.LoginSuccess,
 		Token:     []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
@@ -116,7 +116,7 @@ func TestEncodeLoginResponse(t *testing.T) {
 
 func TestRealtimeWithMultipleFields(t *testing.T) {
 	data := make([]byte, 0)
-	data = append(data, 0x16, 0x01, 0x01, 0x0C, 0x00, 0x00)
+	data = append(data, 0x22, 0x01, 0x01, 0x12, 0x00, 0x00)
 
 	data = append(data, codec.FieldVehicle)
 	vehicleBytes := make([]byte, 20)

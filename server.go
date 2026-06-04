@@ -23,6 +23,9 @@ type Server struct {
 	platformHandler PlatformHandler
 	paramHandler    ParamHandler
 
+	timeCodec       TimeCodec
+	bccIncludeStart bool
+
 	maxConns    int
 	readTimeout  time.Duration
 	writeTimeout time.Duration
@@ -207,7 +210,7 @@ func (s *Server) idleCheckLoop() {
 				return true
 			}
 
-			if err := c.Send(constant.CmdHeartbeat, nil); err != nil {
+			if err := c.Send(constant.CmdHeartbeat, encodeBCDTime(time.Now().UTC())); err != nil {
 				s.logger.Warn("idle probe failed, closing", "conn_id", c.id, "error", err)
 				c.Close()
 				return true

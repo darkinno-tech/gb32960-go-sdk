@@ -22,7 +22,7 @@ func (h *MyHandler) OnVehicleLogin(ctx context.Context, conn *gb32960.Connection
 	copy(token, []byte("TOKEN123"))
 
 	return &gb32960.LoginResponse{
-		LoginTime: time.Now().UTC(),
+		LoginTime: msg.LoginTime,
 		Sequence:  msg.Sequence,
 		Result:    0x01,
 		Token:     token,

@@ -123,8 +123,11 @@ func sendPacket(conn net.Conn, command byte, vin string, data []byte, label stri
 }
 
 func buildPacket(command byte, vin string, data []byte) []byte {
-	vinBytes := make([]byte, constant.VINLength)
-	copy(vinBytes, []byte(vin))
+	vinPadded := make([]byte, constant.VINLength)
+	for i := range vinPadded {
+		vinPadded[i] = 0x20
+	}
+	copy(vinPadded, []byte(vin))
 	totalLen := constant.HeaderSize + len(data) + 1
 	pkt := make([]byte, totalLen)
 	pos := 0
@@ -136,7 +139,7 @@ func buildPacket(command byte, vin string, data []byte) []byte {
 	pos++
 	pkt[pos] = 0x01
 	pos++
-	copy(pkt[pos:pos+constant.VINLength], vinBytes)
+	copy(pkt[pos:pos+constant.VINLength], vinPadded)
 	pos += constant.VINLength
 	pkt[pos] = constant.EncNone
 	pos++

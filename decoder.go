@@ -15,16 +15,31 @@ var (
 	ErrInvalidLength   = errors.New("gb32960: invalid data length")
 	ErrInvalidChecksum = errors.New("gb32960: checksum mismatch")
 	ErrBufferTooSmall  = errors.New("gb32960: buffer too small")
+
+	defaultDecoder = &Decoder{timeCodec: TimeCodecBCD}
+)
+
+type TimeCodec int
+
+const (
+	TimeCodecBCD     TimeCodec = iota // GB/T 32960 标准 BCD 编码
+	TimeCodecBinary                   // 二进制编码（兼容非标终端）
 )
 
 type Decoder struct {
-	buf   []byte
-	pos   int
-	limit int
+	buf             []byte
+	pos             int
+	limit           int
+	timeCodec       TimeCodec
+	bccIncludeStart bool
 }
 
 func NewDecoder() *Decoder {
-	return &Decoder{}
+	return &Decoder{timeCodec: TimeCodecBCD}
+}
+
+func newDecoderWithConfig(tc TimeCodec, bccIncludeStart bool) *Decoder {
+	return &Decoder{timeCodec: tc, bccIncludeStart: bccIncludeStart}
 }
 
 func (d *Decoder) Reset() {
@@ -93,11 +108,7 @@ func (d *Decoder) Decode() (*Packet, error) {
 		bcc := d.buf[d.pos]
 		d.pos++
 
-		calcBCC := calculateBCC(header[2:])
-		for _, b := range data {
-			calcBCC ^= b
-		}
-		if calcBCC != bcc {
+		if !d.verifyBCC(header, data, bcc) {
 			d.pos = startIdx + 2
 			continue
 		}
@@ -132,6 +143,28 @@ func calculateBCC(data []byte) byte {
 	return bcc
 }
 
+func (d *Decoder) verifyBCC(header, data []byte, bcc byte) bool {
+	// 标准模式：BCC 从 command 字节开始（不含起始符 0x23 0x23）
+	calcBCC := calculateBCC(header[2:])
+	for _, b := range data {
+		calcBCC ^= b
+	}
+	if calcBCC == bcc {
+		return true
+	}
+	// 兼容模式：BCC 从起始符开始
+	if d.bccIncludeStart {
+		calcBCC2 := calculateBCC(header)
+		for _, b := range data {
+			calcBCC2 ^= b
+		}
+		if calcBCC2 == bcc {
+			return true
+		}
+	}
+	return false
+}
+
 func (d *Decoder) Close() {}
 
 // EncodeResponse encodes a GB32960 response frame.
@@ -162,7 +195,12 @@ func EncodeResponse(command byte, vin string, encryptType byte, data []byte) ([]
 	pkt[pos] = constant.RespSuccess
 	pos++
 
-	copy(pkt[pos:pos+constant.VINLength], []byte(vin))
+	vinPadded := make([]byte, constant.VINLength)
+	for i := range vinPadded {
+		vinPadded[i] = 0x20
+	}
+	copy(vinPadded, []byte(vin))
+	copy(pkt[pos:pos+constant.VINLength], vinPadded)
 	pos += constant.VINLength
 
 	pkt[pos] = encryptType
@@ -195,12 +233,16 @@ func VerifyVIN(vin string) bool {
 }
 
 func DecodeLoginData(data []byte) (*VehicleLoginData, error) {
+	return defaultDecoder.DecodeLoginData(data)
+}
+
+func (d *Decoder) DecodeLoginData(data []byte) (*VehicleLoginData, error) {
 	if len(data) < 9 {
 		return nil, fmt.Errorf("login data too short: %d bytes", len(data))
 	}
 
 	pos := 0
-	loginTime := parseTime6(data[pos : pos+6])
+	loginTime := d.decodeTime6(data[pos : pos+6])
 	pos += 6
 	seq := binary.BigEndian.Uint16(data[pos : pos+2])
 	pos += 2
@@ -255,16 +297,24 @@ func EncodeLoginResponse(data *LoginResponse) ([]byte, error) {
 }
 
 func DecodeLogoutData(data []byte) (*VehicleLogoutData, error) {
+	return defaultDecoder.DecodeLogoutData(data)
+}
+
+func (d *Decoder) DecodeLogoutData(data []byte) (*VehicleLogoutData, error) {
 	if len(data) < 8 {
 		return nil, fmt.Errorf("logout data too short: %d bytes", len(data))
 	}
 	return &VehicleLogoutData{
-		LogoutTime: parseTime6(data[0:6]),
+		LogoutTime: d.decodeTime6(data[0:6]),
 		Sequence:   binary.BigEndian.Uint16(data[6:8]),
 	}, nil
 }
 
 func parseTime6(b []byte) time.Time {
+	return parseBinaryTime6(b)
+}
+
+func parseBinaryTime6(b []byte) time.Time {
 	return time.Date(
 		2000+int(b[0]), time.Month(b[1]), int(b[2]),
 		int(b[3]), int(b[4]), int(b[5]),
@@ -272,7 +322,30 @@ func parseTime6(b []byte) time.Time {
 	)
 }
 
+func parseBCDTime6(b []byte) time.Time {
+	return time.Date(
+		2000+int(b[0]>>4)*10+int(b[0]&0x0F),
+		time.Month(int(b[1]>>4)*10+int(b[1]&0x0F)),
+		int(b[2]>>4)*10+int(b[2]&0x0F),
+		int(b[3]>>4)*10+int(b[3]&0x0F),
+		int(b[4]>>4)*10+int(b[4]&0x0F),
+		int(b[5]>>4)*10+int(b[5]&0x0F),
+		0, time.UTC,
+	)
+}
+
+func (d *Decoder) decodeTime6(b []byte) time.Time {
+	if d.timeCodec == TimeCodecBinary {
+		return parseBinaryTime6(b)
+	}
+	return parseBCDTime6(b)
+}
+
 func encodeTime6(t time.Time) []byte {
+	return encodeBCDTime(t)
+}
+
+func encodeBinaryTime6(t time.Time) []byte {
 	return []byte{
 		byte(t.Year() % 100),
 		byte(t.Month()),
@@ -280,6 +353,18 @@ func encodeTime6(t time.Time) []byte {
 		byte(t.Hour()),
 		byte(t.Minute()),
 		byte(t.Second()),
+	}
+}
+
+func encodeBCDTime(t time.Time) []byte {
+	y := t.Year() - 2000
+	return []byte{
+		byte((y/10)<<4 | (y % 10)),
+		byte((int(t.Month())/10)<<4 | (int(t.Month()) % 10)),
+		byte((t.Day()/10)<<4 | (t.Day() % 10)),
+		byte((t.Hour()/10)<<4 | (t.Hour() % 10)),
+		byte((t.Minute()/10)<<4 | (t.Minute() % 10)),
+		byte((t.Second()/10)<<4 | (t.Second() % 10)),
 	}
 }
 
@@ -311,11 +396,15 @@ func decodeParamString(data []byte) (string, int) {
 }
 
 func DecodePlatLoginResponse(data []byte) (*PlatformLoginData, error) {
+	return defaultDecoder.DecodePlatLoginResponse(data)
+}
+
+func (d *Decoder) DecodePlatLoginResponse(data []byte) (*PlatformLoginData, error) {
 	if len(data) < 8 {
 		return nil, fmt.Errorf("platform login data too short: %d bytes", len(data))
 	}
 	pos := 0
-	loginTime := parseTime6(data[pos : pos+6])
+	loginTime := d.decodeTime6(data[pos : pos+6])
 	pos += 6
 	seq := binary.BigEndian.Uint16(data[pos : pos+2])
 	pos += 2
@@ -331,21 +420,29 @@ func DecodePlatLoginResponse(data []byte) (*PlatformLoginData, error) {
 }
 
 func DecodePlatLogoutResponse(data []byte) (*PlatformLogoutData, error) {
+	return defaultDecoder.DecodePlatLogoutResponse(data)
+}
+
+func (d *Decoder) DecodePlatLogoutResponse(data []byte) (*PlatformLogoutData, error) {
 	if len(data) < 8 {
 		return nil, fmt.Errorf("platform logout data too short: %d bytes", len(data))
 	}
 	return &PlatformLogoutData{
-		LogoutTime: parseTime6(data[0:6]),
+		LogoutTime: d.decodeTime6(data[0:6]),
 		Sequence:   binary.BigEndian.Uint16(data[6:8]),
 	}, nil
 }
 
 func DecodeParamQueryData(data []byte) (*ParamQueryData, error) {
+	return defaultDecoder.DecodeParamQueryData(data)
+}
+
+func (d *Decoder) DecodeParamQueryData(data []byte) (*ParamQueryData, error) {
 	if len(data) < 7 {
 		return nil, fmt.Errorf("param query data too short: %d bytes", len(data))
 	}
 	pos := 0
-	queryTime := parseTime6(data[pos : pos+6])
+	queryTime := d.decodeTime6(data[pos : pos+6])
 	pos += 6
 	count := data[pos]
 	pos++
@@ -361,11 +458,15 @@ func DecodeParamQueryData(data []byte) (*ParamQueryData, error) {
 }
 
 func DecodeParamSettingData(data []byte) (*ParamSettingData, error) {
+	return defaultDecoder.DecodeParamSettingData(data)
+}
+
+func (d *Decoder) DecodeParamSettingData(data []byte) (*ParamSettingData, error) {
 	if len(data) < 7 {
 		return nil, fmt.Errorf("param setting data too short: %d bytes", len(data))
 	}
 	pos := 0
-	settingTime := parseTime6(data[pos : pos+6])
+	settingTime := d.decodeTime6(data[pos : pos+6])
 	pos += 6
 	count := data[pos]
 	pos++

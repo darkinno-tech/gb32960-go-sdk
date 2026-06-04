@@ -104,7 +104,7 @@ func TestStandardVINValidation(t *testing.T) {
 
 func TestStandardLoginDataFormat(t *testing.T) {
 	data := []byte{
-		0x26, 0x05, 0x0E, 0x0E, 0x30, 0x00,
+		0x26, 0x05, 0x14, 0x14, 0x30, 0x00,
 		0x00, 0x01,
 		0x10,
 		'S', 'I', 'M', 'C', 'A', 'R', 'D', '0', '0', '0', '0', '0', '0', '0', '0', '1',
@@ -170,7 +170,7 @@ func TestStandardLoginResponse(t *testing.T) {
 
 func TestStandardRealtimeDataFormat(t *testing.T) {
 	data := make([]byte, 0, 27)
-	data = append(data, 0x26, 0x05, 0x0E, 0x0E, 0x30, 0x00)
+	data = append(data, 0x26, 0x05, 0x14, 0x14, 0x30, 0x00)
 	data = append(data, byte(codec.FieldVehicle))
 	v := make([]byte, 20)
 	binary.BigEndian.PutUint16(v[3:5], 600)
@@ -227,7 +227,7 @@ func TestStandardAllDataFields(t *testing.T) {
 
 func TestStandardReissueDataFormat(t *testing.T) {
 	item := make([]byte, 0, 27)
-	item = append(item, 0x26, 0x05, 0x0E, 0x0E, 0x30, 0x00)
+	item = append(item, 0x26, 0x05, 0x14, 0x14, 0x30, 0x00)
 	item = append(item, byte(codec.FieldVehicle))
 	v := make([]byte, 20)
 	binary.BigEndian.PutUint16(v[3:5], 500)
@@ -236,7 +236,7 @@ func TestStandardReissueDataFormat(t *testing.T) {
 	item = append(item, v...)
 
 	data := make([]byte, 0)
-	data = append(data, 0x26, 0x05, 0x0E, 0x0E, 0x30, 0x00)
+	data = append(data, 0x26, 0x05, 0x14, 0x14, 0x30, 0x00)
 	data = append(data, 0x00, 0x02)
 	data = append(data, item...)
 	data = append(data, item...)
@@ -252,7 +252,7 @@ func TestStandardReissueDataFormat(t *testing.T) {
 
 func TestStandardLogoutDataFormat(t *testing.T) {
 	data := []byte{
-		0x26, 0x05, 0x0E, 0x0E, 0x35, 0x00,
+		0x26, 0x05, 0x14, 0x14, 0x35, 0x00,
 		0x00, 0x03,
 	}
 

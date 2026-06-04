@@ -8,12 +8,16 @@ import (
 )
 
 func DecodeRealtimeData(data []byte) (*RealtimeMessage, error) {
+	return defaultDecoder.DecodeRealtimeData(data)
+}
+
+func (d *Decoder) DecodeRealtimeData(data []byte) (*RealtimeMessage, error) {
 	if len(data) < 6 {
 		return nil, fmt.Errorf("realtime data too short: %d bytes", len(data))
 	}
 
 	msg := &RealtimeMessage{
-		InfoTime: parseTime6(data[0:6]),
+		InfoTime: d.decodeTime6(data[0:6]),
 	}
 	pos := 6
 
@@ -224,12 +228,16 @@ func findFieldEnd(fieldID byte, data []byte, pos int) int {
 }
 
 func DecodeReissueData(data []byte) (*ReissueMessage, error) {
+	return defaultDecoder.DecodeReissueData(data)
+}
+
+func (d *Decoder) DecodeReissueData(data []byte) (*ReissueMessage, error) {
 	if len(data) < 8 {
 		return nil, fmt.Errorf("reissue data too short: %d bytes", len(data))
 	}
 
 	pos := 0
-	infoTime := parseTime6(data[pos : pos+6])
+	infoTime := d.decodeTime6(data[pos : pos+6])
 	pos += 6
 
 	totalItems := int(binary.BigEndian.Uint16(data[pos : pos+2]))
@@ -241,7 +249,7 @@ func DecodeReissueData(data []byte) (*ReissueMessage, error) {
 	}
 
 	for i := 0; i < totalItems && pos < len(data); i++ {
-		item, consumed, err := decodeRealtimeItem(data[pos:])
+		item, consumed, err := d.decodeRealtimeItem(data[pos:])
 		if err != nil {
 			break
 		}
@@ -254,13 +262,13 @@ func DecodeReissueData(data []byte) (*ReissueMessage, error) {
 	return msg, nil
 }
 
-func decodeRealtimeItem(data []byte) (*RealtimeMessage, int, error) {
+func (d *Decoder) decodeRealtimeItem(data []byte) (*RealtimeMessage, int, error) {
 	if len(data) < 6 {
 		return nil, 0, fmt.Errorf("realtime item too short: %d bytes", len(data))
 	}
 
 	msg := &RealtimeMessage{
-		InfoTime: parseTime6(data[0:6]),
+		InfoTime: d.decodeTime6(data[0:6]),
 	}
 	pos := 6
 

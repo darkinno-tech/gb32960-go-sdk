@@ -77,3 +77,15 @@ func WithParamHandler(pmh ParamHandler) Option {
 		s.paramHandler = pmh
 	}
 }
+
+func WithTimeCodec(tc TimeCodec) Option {
+	return func(s *Server) {
+		s.timeCodec = tc
+	}
+}
+
+func WithBCCIncludeStart(b bool) Option {
+	return func(s *Server) {
+		s.bccIncludeStart = b
+	}
+}

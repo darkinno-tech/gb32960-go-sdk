@@ -22,7 +22,7 @@ type testHandler struct {
 func (h *testHandler) OnVehicleLogin(ctx context.Context, conn *Connection, msg *VehicleLoginData) (*LoginResponse, error) {
 	h.loginCalls++
 	return &LoginResponse{
-		LoginTime: time.Now().UTC(),
+		LoginTime: msg.LoginTime,
 		Sequence:  msg.Sequence,
 		Result:    constant.LoginSuccess,
 		Token:     []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
@@ -107,7 +107,7 @@ func TestServerConnectionAndLogin(t *testing.T) {
 
 	// Send login packet
 	loginData := []byte{
-		0x16, 0x01, 0x01, 0x0C, 0x00, 0x00,
+		0x22, 0x01, 0x01, 0x12, 0x00, 0x00,
 		0x00, 0x01,
 		0x0A,
 		'1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -162,7 +162,7 @@ func TestServerLoginRejected(t *testing.T) {
 	time.Sleep(30 * time.Millisecond)
 
 	loginPkt := makeMinimalPacket(constant.CmdLogin, "TESTVIN1234567890", []byte{
-		0x16, 0x01, 0x01, 0x0C, 0x00, 0x00,
+		0x22, 0x01, 0x01, 0x12, 0x00, 0x00,
 		0x00, 0x01,
 		0x00,
 	})
@@ -198,7 +198,7 @@ func TestServerHeartbeat(t *testing.T) {
 
 	// Login first: datetime(6) + seq(2) + iccidLen(1) = 9 bytes minimum
 	loginData := []byte{
-		0x16, 0x01, 0x01, 0x0C, 0x00, 0x00,
+		0x22, 0x01, 0x01, 0x12, 0x00, 0x00,
 		0x00, 0x01,
 		0x00,
 	}
@@ -220,7 +220,7 @@ func TestServerHeartbeat(t *testing.T) {
 func TestDecodeReissueMultipleItems(t *testing.T) {
 	// Build item 1: time(6) + field_vehicle(1) + vehicle_data(20) = 27 bytes
 	item1 := make([]byte, 0, 27)
-	item1 = append(item1, 0x16, 0x01, 0x01, 0x0C, 0x00, 0x00) // datetime
+	item1 = append(item1, 0x22, 0x01, 0x01, 0x12, 0x00, 0x00) // datetime
 	item1 = append(item1, codec.FieldVehicle)
 	v := make([]byte, 20)
 	binary.BigEndian.PutUint16(v[3:5], 500)
@@ -230,7 +230,7 @@ func TestDecodeReissueMultipleItems(t *testing.T) {
 
 	// Build item 2: time(6) + field_position(1) + position_data(8) = 15 bytes
 	item2 := make([]byte, 0, 15)
-	item2 = append(item2, 0x16, 0x02, 0x01, 0x0C, 0x30, 0x00) // datetime
+	item2 = append(item2, 0x22, 0x02, 0x01, 0x12, 0x30, 0x00) // datetime
 	item2 = append(item2, codec.FieldPosition)
 	p := make([]byte, 8)
 	binary.BigEndian.PutUint32(p[0:4], 121000000)
@@ -239,7 +239,7 @@ func TestDecodeReissueMultipleItems(t *testing.T) {
 
 	// Assemble reissue data: time(6) + count(2) + items
 	data := make([]byte, 0)
-	data = append(data, 0x16, 0x01, 0x01, 0x0C, 0x00, 0x00) // reissue time
+	data = append(data, 0x22, 0x01, 0x01, 0x12, 0x00, 0x00) // reissue time
 	data = append(data, 0x00, 0x02)                          // count = 2
 	data = append(data, item1...)
 	data = append(data, item2...)
