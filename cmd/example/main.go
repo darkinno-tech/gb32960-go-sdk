@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	gb32960 "github.com/darkinno/gb32960-go-sdk"
-	"github.com/darkinno/gb32960-go-sdk/auth"
+	gb32960 "github.com/DarkInno/gb32960-go-sdk"
+	"github.com/DarkInno/gb32960-go-sdk/auth"
 )
 
 type MyHandler struct{}

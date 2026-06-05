@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/darkinno/gb32960-go-sdk/codec"
+	"github.com/DarkInno/gb32960-go-sdk/codec"
 )
 
 func DecodeRealtimeData(data []byte) (*RealtimeMessage, error) {

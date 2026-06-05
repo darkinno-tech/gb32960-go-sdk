@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/darkinno/gb32960-go-sdk/constant"
+	"github.com/DarkInno/gb32960-go-sdk/constant"
 )
 
 type Server struct {

@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/darkinno/gb32960-go-sdk/codec"
-	"github.com/darkinno/gb32960-go-sdk/constant"
+	"github.com/DarkInno/gb32960-go-sdk/codec"
+	"github.com/DarkInno/gb32960-go-sdk/constant"
 )
 
 func TestDecodeRealtimeVehicleOnly(t *testing.T) {
