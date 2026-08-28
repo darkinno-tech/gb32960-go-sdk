@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DarkInno/gb32960-go-sdk/constant"
+	"github.com/im10furry/gb32960-go-sdk/constant"
 )
 
 func makeMinimalPacket(command byte, vin string, data []byte) []byte {

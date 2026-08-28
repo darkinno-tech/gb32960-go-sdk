@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DarkInno/gb32960-go-sdk/constant"
+	"github.com/im10furry/gb32960-go-sdk/constant"
 )
 
 type ConnectionState int32

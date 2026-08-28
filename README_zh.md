@@ -1,19 +1,19 @@
 <p align="center">
-  <i>"We are DarkInno. Like a stout beer, our best ideas are brewed slowly in the dark, away from the hype."</i>
+  <i>"We are im10furry. Like a stout beer, our best ideas are brewed slowly in the dark, away from the hype."</i>
 </p>
 
 ---
 
 # gb32960-go-sdk
 
-> GB/T 32960 电动汽车远程服务与管理系统通信协议 Go SDK — by [DarkInno](https://github.com/DarkInno)
+> GB/T 32960 电动汽车远程服务与管理系统通信协议 Go SDK — by [im10furry](https://github.com/im10furry)
 >
 > Go 标准库编写，零外部依赖。接收 T-BOX TCP 连接，解析协议数据，回调分发。
 
 <p align="center">
   <a href="go.mod"><img src="https://img.shields.io/badge/Go-%3E%3D1.22-00ADD8?logo=go" alt="Go Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="License"></a>
-  <a href="https://github.com/DarkInno"><img src="https://img.shields.io/badge/DarkInno-open%20source-blue" alt="DarkInno"></a>
+  <a href="https://github.com/im10furry"><img src="https://img.shields.io/badge/im10furry-open%20source-blue" alt="im10furry"></a>
   <a href="README.md">English</a>
 </p>
 
@@ -34,7 +34,7 @@
 ## 安装
 
 ```bash
-go get github.com/DarkInno/gb32960-go-sdk@v1.0.0
+go get github.com/im10furry/gb32960-go-sdk@v1.0.0
 ```
 
 ## 快速开始
@@ -47,8 +47,8 @@ import (
 	"log"
 	"time"
 
-	gb32960 "github.com/DarkInno/gb32960-go-sdk"
-	"github.com/DarkInno/gb32960-go-sdk/auth"
+	gb32960 "github.com/im10furry/gb32960-go-sdk"
+	"github.com/im10furry/gb32960-go-sdk/auth"
 )
 
 type AppHandler struct{}
@@ -305,7 +305,7 @@ func (c *Connection) Send(cmd byte, data []byte) error
 ## 开发
 
 ```bash
-git clone https://github.com/DarkInno/gb32960-go-sdk.git
+git clone https://github.com/im10furry/gb32960-go-sdk.git
 cd gb32960-go-sdk
 
 go build ./...          # 编译
@@ -358,13 +358,13 @@ gb32960-go-sdk/
 
 ## 许可证
 
-[MIT License](LICENSE) — [DarkInno](https://github.com/DarkInno)
+[MIT License](LICENSE) — [im10furry](https://github.com/im10furry)
 
 ---
 
 <p align="center">
   如果你觉得有用，请点亮一颗星<br>
-  <a href="https://github.com/DarkInno/gb32960-go-sdk">
-    <img src="https://img.shields.io/github/stars/darkinno/gb32960-go-sdk?style=social" alt="GitHub stars">
+  <a href="https://github.com/im10furry/gb32960-go-sdk">
+    <img src="https://img.shields.io/github/stars/im10furry/gb32960-go-sdk?style=social" alt="GitHub stars">
   </a>
 </p>

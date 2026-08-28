@@ -1,5 +1,5 @@
 <p align="center">
-  <i>"We are DarkInno. Like a stout beer, our best ideas are brewed slowly in the dark, away from the hype."</i>
+  <i>"We are im10furry. Like a stout beer, our best ideas are brewed slowly in the dark, away from the hype."</i>
 </p>
 
 ---
@@ -11,7 +11,7 @@
 <p align="center">
   <a href="go.mod"><img src="https://img.shields.io/badge/Go-%3E%3D1.22-00ADD8?logo=go" alt="Go Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="License"></a>
-  <a href="https://github.com/DarkInno"><img src="https://img.shields.io/badge/DarkInno-open%20source-blue" alt="DarkInno"></a>
+  <a href="https://github.com/im10furry"><img src="https://img.shields.io/badge/im10furry-open%20source-blue" alt="im10furry"></a>
   <a href="README_zh.md">中文</a>
 </p>
 
@@ -32,7 +32,7 @@
 ## Install
 
 ```bash
-go get github.com/DarkInno/gb32960-go-sdk@v1.0.0
+go get github.com/im10furry/gb32960-go-sdk@v1.0.0
 ```
 
 ## Quick Start
@@ -45,8 +45,8 @@ import (
 	"log"
 	"time"
 
-	gb32960 "github.com/DarkInno/gb32960-go-sdk"
-	"github.com/DarkInno/gb32960-go-sdk/auth"
+	gb32960 "github.com/im10furry/gb32960-go-sdk"
+	"github.com/im10furry/gb32960-go-sdk/auth"
 )
 
 type AppHandler struct{}
@@ -303,7 +303,7 @@ func (c *Connection) Send(cmd byte, data []byte) error
 ## Development
 
 ```bash
-git clone https://github.com/DarkInno/gb32960-go-sdk.git
+git clone https://github.com/im10furry/gb32960-go-sdk.git
 cd gb32960-go-sdk
 
 go build ./...          # compile
@@ -356,13 +356,13 @@ gb32960-go-sdk/
 
 ## License
 
-[MIT License](LICENSE) — [DarkInno](https://github.com/DarkInno)
+[MIT License](LICENSE) — [im10furry](https://github.com/im10furry)
 
 ---
 
 <p align="center">
   If you find this useful, please consider<br>
-  <a href="https://github.com/DarkInno/gb32960-go-sdk">
-    <img src="https://img.shields.io/github/stars/darkinno/gb32960-go-sdk?style=social" alt="GitHub stars">
+  <a href="https://github.com/im10furry/gb32960-go-sdk">
+    <img src="https://img.shields.io/github/stars/im10furry/gb32960-go-sdk?style=social" alt="GitHub stars">
   </a>
 </p>

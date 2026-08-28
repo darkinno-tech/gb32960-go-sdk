@@ -1,4 +1,4 @@
-module github.com/DarkInno/gb32960-go-sdk
+module github.com/im10furry/gb32960-go-sdk
 
 go 1.25.0
 

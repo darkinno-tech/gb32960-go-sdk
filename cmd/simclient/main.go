@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/DarkInno/gb32960-go-sdk/codec"
-	"github.com/DarkInno/gb32960-go-sdk/constant"
+	"github.com/im10furry/gb32960-go-sdk/codec"
+	"github.com/im10furry/gb32960-go-sdk/constant"
 )
 
 func main() {
