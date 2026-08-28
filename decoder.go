@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/im10furry/gb32960-go-sdk/constant"
+	"github.com/darkinno-tech/gb32960-go-sdk/constant"
 )
 
 var (
